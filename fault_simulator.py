@@ -262,16 +262,19 @@ class FaultSimulator:
     Islands created along the way are balanced independently (see balance_island).
     """
 
-    def __init__(self, grid, overload_threshold=1.0, max_steps=50):
+    def __init__(self, grid, overload_threshold=1.0, max_steps=50, trip_mode="all"):
         """
         Args:
             grid (GridModel): Network to study (never modified)
             overload_threshold (float): Loading fraction at which a line trips
             max_steps (int): Safety cap on cascade rounds
+            trip_mode (str): "all" trips every overloaded line per round,
+                             "worst" trips only the most overloaded one
         """
         self.grid = grid
         self.overload_threshold = overload_threshold
         self.max_steps = max_steps
+        self.trip_mode = trip_mode
         self.base_case = solve_dc_power_flow(grid)
 
     def base_case_overloads(self):
@@ -319,20 +322,24 @@ class FaultSimulator:
             loading = pf.loading(grid)
             overloaded = sorted((line for line, lf in loading.items() if lf > self.overload_threshold),
                                 key=lambda line: -loading[line])
+            if self.trip_mode == "worst":
+                to_trip = overloaded[:1]
+            else:
+                to_trip = overloaded
             lines_out = {(u, v) for u, v, a in grid.get_edges() if not a['active']}
-            result.steps.append(CascadeStep(step, pf, lines_out, overloaded, loading))
+            result.steps.append(CascadeStep(step, pf, lines_out, to_trip, loading))
 
             if verbose:
                 lost = result.base_served - pf.total_served
                 print(f"[Round {step}] {len(pf.islands)} island(s), "
                       f"served {pf.total_served:.1f} MW (lost {lost:.1f} MW)")
-                for line in overloaded:
+                for line in to_trip:
                     print(f"           TRIP {_label(line)}: {abs(pf.flows[line]):.1f} MW "
                           f"= {100 * loading[line]:.0f}% of rating")
 
             if not overloaded:
                 break
-            for line in overloaded:
+            for line in to_trip:
                 grid.fault_edge(*line)
         else:
             raise RuntimeError(f"Cascade did not settle within {self.max_steps} rounds")
