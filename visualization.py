@@ -60,11 +60,15 @@ def plot_grid(grid, pf, ax):
     ax.axis('off')
   
 def plot_cascade(result, grid):
-    """One panel per cascade round, left to right."""
-    n = len(result.steps)
+    """Healthy grid first, then one panel per cascade round."""
+    n = len(result.steps) + 1         
     fig, axes = plt.subplots(1, n, figsize=(5 * n, 4), squeeze=False)
-    for step, ax in zip(result.steps, axes[0]):
-        plot_grid(grid,step.power_flow, ax)
+
+    plot_grid(grid, solve_dc_power_flow(grid), axes[0][0])
+    axes[0][0].set_title("Before fault")
+
+    for step, ax in zip(result.steps, axes[0][1:]): 
+        plot_grid(grid, step.power_flow, ax)
         ax.set_title(f"Round {step.step}")
     return fig
 
