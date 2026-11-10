@@ -267,11 +267,6 @@ def create_sample_5_bus_network():
     """
     Small 5-bus network with two generators, a meshed core and a radial feeder.
 
-        Gen 1 ── 2 ── 3
-          │      │ \\  │
-          │      │  \\ │
-         Gen 5 ─ 4 ──┘   (plus radial bus via 4)
-
     Topology chosen so that losing one corridor overloads its parallel path,
     which is exactly the mechanism that drives cascading failures.
     """
@@ -313,7 +308,7 @@ _IEEE14_POS = {1: (0, 4), 2: (1, 0.5), 3: (4, 0), 4: (3.5, 2), 5: (1.5, 2.5),
                11: (2.5, 5.5), 12: (0.5, 6.5), 13: (2, 6.5), 14: (4.5, 6.5)}
 
 
-def create_ieee_14_bus_network(rating_margin=1.25, min_rating=15.0, base_flows=None):
+def create_ieee_14_bus_network(rating_margin=2.0, min_rating=15.0, base_flows=None):
     """
     IEEE 14-bus test system with assumed thermal ratings.
 

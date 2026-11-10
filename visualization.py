@@ -5,7 +5,7 @@ Visualization for power grid simulations.
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from grid_model import create_simple_3_bus_network
+from grid_model import create_simple_3_bus_network, create_ieee_14_bus_network
 from fault_simulator import solve_dc_power_flow, FaultSimulator
 
 def line_color(loading):
@@ -72,6 +72,22 @@ def plot_cascade(result, grid):
         ax.set_title(f"Round {step.step}")
     return fig
 
+def plot_n_minus_1(results, ax, top=10):
+    """Horizontal bar chart: load lost for each single-line outage, worst first."""
+    worst = results[:top]
+    names = [f"Line {r.initial_faults[0][0]}-{r.initial_faults[0][1]}" for r in worst]
+    lost = [100 * r.lost_load / r.total_load for r in worst]
+
+    ax.barh(names, lost, color="#2a78d6")
+    ax.invert_yaxis()                                   
+    for i, value in enumerate(lost):
+        ax.text(value + 1, i, f"{value:.0f}%", va="center", fontsize=9)
+
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("Load lost (% of total demand)")
+    ax.set_title("N-1 contingency ranking")
+    ax.spines[["top", "right"]].set_visible(False)
+
 
 if __name__ == "__main__":
     grid = create_simple_3_bus_network()
@@ -79,4 +95,10 @@ if __name__ == "__main__":
     fig = plot_cascade(result, grid)
     fig.savefig("outputs/cascade.png")
     print("Saved!")
+    ieee = create_ieee_14_bus_network()
+    results = FaultSimulator(ieee, trip_mode="worst").n_minus_1()
+    fig, ax = plt.subplots(figsize=(7, 5))
+    plot_n_minus_1(results, ax)
+    fig.savefig("outputs/n_minus_1.png", bbox_inches="tight")
+
 
