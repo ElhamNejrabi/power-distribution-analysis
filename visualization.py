@@ -27,7 +27,7 @@ def plot_grid(grid, pf, ax):
     for n in grid.graph.nodes():
         if grid.get_node(n)['is_generator']:
             node_colors.append("#2a78d6")   
-        elif pf.served_load[n]>0:
+        elif pf.served_load[n]>0 or (grid.get_node(n)['load'] == 0):
             node_colors.append("#00b41b")    
 
         else:
@@ -59,10 +59,12 @@ def plot_grid(grid, pf, ax):
     ax.set_title(grid.name)                                
     ax.axis('off')
   
-def plot_cascade(result, grid):
+def plot_cascade(result, grid, panel_size=None):
     """Healthy grid first, then one panel per cascade round."""
-    n = len(result.steps) + 1         
-    fig, axes = plt.subplots(1, n, figsize=(5 * n, 4), squeeze=False)
+    if panel_size is None:
+        panel_size = (5, 4) if len(grid.graph) <= 5 else (8, 7)   # bigger grids need room
+    n = len(result.steps) + 1
+    fig, axes = plt.subplots(1, n, figsize=(panel_size[0] * n, panel_size[1]), squeeze=False)
 
     plot_grid(grid, solve_dc_power_flow(grid), axes[0][0])
     axes[0][0].set_title("Before fault")
